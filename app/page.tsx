@@ -1,69 +1,185 @@
-import Image from "next/image";
+import InvestigationController from "./investigation-controller";
+import DecryptedText from "./DecryptedText";
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <>
+      <a className="skip-link" href="#investigation">Skip to investigation</a>
+      <canvas id="rain" aria-hidden="true" />
+      <div className="atmosphere" aria-hidden="true" />
+      <div className="scanlines" aria-hidden="true" />
+
+      <header className="topbar">
+        <a className="brand" href="#top" aria-label="DECODE archive, back to top" data-cursor-label="Back to top">
+          <svg className="brand-mark" viewBox="0 0 36 36" aria-hidden="true">
+            <path d="M3 10V3h7M26 3h7v7M33 26v7h-7M10 33H3v-7" />
+            <path className="brand-d" d="M12 10h6a8 8 0 0 1 0 16h-6z" />
+          </svg>
+          <span>DECODE<span className="brand-divider">/</span><span className="brand-sub">DIGITAL ARCHIVE</span></span>
+        </a>
+        <div className="header-tools">
+          <span className="connection"><span className="status-dot" /> SECURE LOCAL CONNECTION</span>
+          <button className="utility-button" id="motion-toggle" type="button" aria-pressed="false" aria-label="Pause background animation">
+            <span aria-hidden="true">Ⅱ</span><span id="motion-label">PAUSE FX</span>
+          </button>
+          <button className="utility-button" id="sound-toggle" type="button" aria-pressed="false" aria-label="Enable interface sound">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 8h3l4-4v12l-4-4H3zM14 7q4 3 0 6" /></svg>
+            <span id="sound-label">SOUND OFF</span>
+          </button>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+      </header>
+
+      <main className="shell" id="top">
+        <section className="intro" aria-labelledby="headline">
+          <div className="intro-content">
+            <p className="eyebrow"><span className="crosshair" aria-hidden="true">+</span> AN INTERACTIVE DIGITAL MYSTERY <span className="edition">VOL. 001</span></p>
+            <h1 id="headline">
+              <DecryptedText
+                text={"THE TRUTH IS\nIN THE CODE."}
+                animateOn="inViewHover"
+                effect="scramble"
+                sequential
+                revealDirection="start"
+                speed={60}
+                maxIterations={10}
+                hoverRadius={100}
+                scrambleColor="var(--electric)"
+                loop={false}
+                loopDelay={2000}
+                useOriginalCharsOnly={false}
+                characters="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!@#$%^&*()_+"
+                className="revealed"
+                encryptedClassName="encrypted"
+                parentClassName="headline-decryption"
+                clickMode="once"
+              >
+                <span className="heading-cursor" aria-hidden="true">_</span>
+              </DecryptedText>
+            </h1>
+            <p className="intro-copy">Some things were never meant to be found.<br />A lost transmission. Three encrypted fragments.<br />Follow the signal. Uncover what remains.</p>
+            <div className="intro-meta">
+              <span><span className="status-dot" /><span id="investigation-status">INVESTIGATION OPEN</span></span>
+              <span id="remaining-layers">3 LAYERS TO DECRYPT</span><span>EST. 5 MIN</span>
+            </div>
+          </div>
+          <div className="signal-art" aria-hidden="true">
+            <div className="signal-top"><span>INCOMING TRANSMISSION</span><span className="signal-live">● LIVE</span></div>
+            <div className="signal-target">
+              <span className="target-axis horizontal" /><span className="target-axis vertical" />
+              <span className="target-bracket top-left" /><span className="target-bracket top-right" />
+              <span className="target-bracket bottom-left" /><span className="target-bracket bottom-right" />
+              <span className="signal-coordinate">51° 30′ 26.4″ N</span><span className="signal-center">⌁</span>
+              <span className="signal-frequency">137.50 <small>MHz</small></span>
+            </div>
+            <div className="signal-bottom"><span>ORIGIN: UNKNOWN</span><span>STRENGTH <i /><i /><i /><i /><i /></span></div>
+          </div>
+          <div className="hero-baseline"><span>ARCHIVE ACCESS <b>GRANTED</b></span><span>SCROLL TO INVESTIGATE <span aria-hidden="true">↓</span></span></div>
+        </section>
+
+        <section id="investigation" className="investigation" aria-labelledby="investigation-heading" tabIndex={-1}>
+          <div className="investigation-topline">
+            <h2 id="investigation-heading"><span className="status-dot" /><span id="system-status">SYSTEM ONLINE</span></h2>
+            <span className="case-reference">CASE 001–A <span>/</span> RESTRICTED ACCESS</span>
+            <span className="session-label" id="storage-status">PROGRESS SAVED ON THIS DEVICE</span>
+          </div>
+          <div className="game-layout">
+            <aside className="mission-panel" aria-labelledby="mission-heading">
+              <div className="section-heading"><h3 id="mission-heading">THE INVESTIGATION</h3><span>01—03</span></div>
+              <p className="mission-kicker">FOLLOW THE FRAGMENTS</p>
+              <p className="mission-description">Every answer opens a door.<br />Start with the signal.</p>
+              <ol className="mission-list" id="mission-list">
+                <li className="mission-item active" data-stage="0" aria-current="step"><span className="mission-index">01</span><span className="mission-name"><strong>THE SIGNAL</strong><small>Caesar cipher</small></span><span className="mission-state">ACTIVE</span></li>
+                <li className="mission-item" data-stage="1"><span className="mission-index">02</span><span className="mission-name"><strong>THE PATTERN</strong><small>Number sequence</small></span><span className="mission-state">LOCKED</span></li>
+                <li className="mission-item" data-stage="2"><span className="mission-index">03</span><span className="mission-name"><strong>THE MESSAGE</strong><small>Final transmission</small></span><span className="mission-state">LOCKED</span></li>
+              </ol>
+              <div className="progress-block">
+                <div className="progress-label"><span>DECRYPTION PROGRESS</span><strong id="progress-text">0 / 3</strong></div>
+                <progress className="progress-track" id="progress-track" max="3" value="0" aria-label="Completed encryption layers">0 of 3 layers decrypted</progress>
+                <p id="progress-caption">Three layers. One hidden truth.</p>
+              </div>
+              <button className="text-button" id="reset-button" type="button" data-cursor-label="Reset"><span aria-hidden="true">↺</span> RESET INVESTIGATION</button>
+              <div className="mission-stamp" aria-hidden="true">DECODE BUREAU<br /><span>INFORMATION WANTS TO BE FOUND.</span><div className="barcode" />001A · 7FA2 · 0317</div>
+            </aside>
+
+            <section className="puzzle-panel" aria-labelledby="mission-title">
+              <div className="section-heading"><h3>INTERCEPTED DATA</h3><span className="live-label"><span className="status-dot" /> LIVE FEED</span></div>
+              <div className="puzzle-body">
+                <div className="puzzle-topline"><p className="eyebrow" id="layer-label">ENCRYPTION LAYER 01</p><span id="data-id">7F–A2</span></div>
+                <h2 id="mission-title">The signal.</h2>
+                <p className="puzzle-description" id="mission-description">Intercepted at 03:17. Someone left a door open.<br />Find out what the transmission says.</p>
+                <div className="cipher-window" id="cipher-window">
+                  <div className="cipher-label"><span>ENCRYPTED FRAGMENT</span><span aria-hidden="true">[ RAW ]</span></div>
+                  <p className="cipher-text" id="cipher-text">WKH GRRU LV RSHQ</p>
+                  <div className="cipher-footer"><span id="data-time">03:17:09 UTC</span><span>SOURCE UNKNOWN <span aria-hidden="true">↗</span></span></div>
+                </div>
+                <div className="clue-box"><span className="clue-icon" aria-hidden="true">↳</span><div><h3>THE LEAD</h3><p id="clue-text">Every letter has shifted three places forward. Reverse the shift.</p></div></div>
+                <form id="answer-form" autoComplete="off" noValidate>
+                  <label htmlFor="answer-input">YOUR DECODED MESSAGE <span>CASE INSENSITIVE</span></label>
+                  <div className="answer-row">
+                    <span className="input-prompt" aria-hidden="true">&gt;_</span>
+                    <input id="answer-input" name="answer" type="text" placeholder="Enter your answer…" maxLength={100} spellCheck={false} autoCapitalize="off" aria-describedby="feedback" data-cursor-label="Enter message" />
+                    <button className="submit-button" id="decode-button" type="submit" data-cursor-label="Decode">DECODE <span aria-hidden="true">↗</span></button>
+                  </div>
+                  <p id="feedback" className="feedback" role="status" aria-live="polite" aria-atomic="true">Awaiting your response<span className="cursor" aria-hidden="true">_</span></p>
+                </form>
+                <div className="puzzle-actions">
+                  <button className="secondary-button" id="hint-button" type="button" aria-expanded="false" aria-controls="hint-panel" data-cursor-label="Reveal hint"><span aria-hidden="true">⌁</span> REQUEST HINT <span id="hint-cost">01 AVAILABLE</span></button>
+                  <button className="secondary-button" id="note-button" type="button" aria-expanded="false" aria-controls="note-panel" data-cursor-label="Field notes"><span aria-hidden="true">▤</span> FIELD NOTES <span id="note-chevron" aria-hidden="true">+</span></button>
+                </div>
+                <div className="reveal-panel" id="hint-panel" hidden><h3>DECRYPTION ASSIST</h3><p id="hint-text" /></div>
+                <div className="reveal-panel field-note" id="note-panel" hidden><h3>INVESTIGATOR’S FIELD NOTE</h3><p id="note-text" /></div>
+                <button className="completion-link" id="view-transmission" type="button" data-cursor-label="Open" hidden>READ THE RECOVERED TRANSMISSION <span aria-hidden="true">↗</span></button>
+              </div>
+              <div className="puzzle-bottom"><span><span className="tiny-square" /> LOCAL DECRYPTION ENGINE</span><span>v.1.0.26</span></div>
+            </section>
+
+            <aside className="log-panel" aria-labelledby="log-heading">
+              <div className="section-heading"><h3 id="log-heading">SYSTEM LOG</h3><span className="log-indicator" aria-hidden="true">●</span></div>
+              <div className="log-topline"><span>SESSION // 001–A</span><span id="log-count">00 EVENTS</span></div>
+              <div id="log-content" className="log-content" role="log" aria-label="Recent system events" aria-live="polite" aria-relevant="additions" tabIndex={0} />
+              <div className="log-bottom"><span className="terminal-caret" aria-hidden="true">&gt;_</span><span>LISTENING FOR A SIGNAL<span className="cursor" aria-hidden="true">...</span></span></div>
+              <div className="archive-note"><span aria-hidden="true">[ ! ]</span><p>“The noise is not the message.<br />Look for what repeats.”</p><small>— UNKNOWN OPERATOR</small></div>
+            </aside>
+          </div>
+        </section>
+
+        <section className="bottom-strip" aria-label="Investigator tips">
+          <p><span className="tip-mark" aria-hidden="true">✳</span><span><strong>STAY CURIOUS.</strong> The archive has more secrets than it admits.</span></p>
+          <div className="keyboard-note"><kbd>ENTER</kbd> DECODE <span>/</span> <kbd>?</kbd> HINT <span>/</span> <kbd>ESC</kbd> CLOSE DIALOG</div>
+        </section>
+        <footer>
+          <span className="footer-brand">DECODE<span className="muted"> / </span>2026</span>
+          <span className="footer-disclaimer">A FICTIONAL MYSTERY. A VERY REAL CURIOSITY.</span>
+          <div><button className="secret-button" id="secret-button" type="button" aria-label="Inspect the unknown archive symbol" title="An unfamiliar symbol">[ ∴ ]</button><button id="about-button" type="button">ABOUT THE ARCHIVE <span aria-hidden="true">↗</span></button></div>
+        </footer>
       </main>
-    </div>
+
+      <dialog id="completion-dialog" className="archive-dialog" aria-labelledby="completion-title" aria-describedby="final-message">
+        <button className="dialog-close" id="close-completion" type="button" aria-label="Close recovered transmission">×</button>
+        <div className="dialog-mark" aria-hidden="true">⌁</div>
+        <p className="eyebrow">ALL THREE LAYERS DECRYPTED</p>
+        <h2 id="completion-title">THE SIGNAL<br />WAS <span>YOU.</span></h2>
+        <div className="transmission-text">
+          <span>TRANSMISSION // 001–A</span><p id="final-message">“The door is open. Stay.”</p>
+          <p>This was never a distress signal. It was an invitation. Someone built this archive for the person who would look past the noise. You followed the pattern. You kept listening.</p>
+          <p>Stay curious, investigator.<br />There is always another layer.</p>
+          <span className="transmission-signature">— THE UNKNOWN OPERATOR</span>
+        </div>
+        <div className="final-code"><span>ARCHIVE STATUS</span><strong>RESTORED ✓</strong></div>
+        <button id="play-again-button" className="submit-button" type="button">BEGIN AGAIN <span aria-hidden="true">↻</span></button>
+        <button id="return-button" className="dialog-return" type="button">RETURN TO THE ARCHIVE</button>
+      </dialog>
+      <dialog id="about-dialog" className="archive-dialog about-dialog" aria-labelledby="about-title">
+        <button className="dialog-close" id="close-about" type="button" aria-label="Close about the archive">×</button>
+        <p className="eyebrow">BEHIND THE INTERFACE</p>
+        <h2 id="about-title">A FICTIONAL<br /><span>DIGITAL MYSTERY.</span></h2>
+        <p>DECODE is a small experiment in curiosity. Three fragments, three ways of seeing, and a message hidden in plain sight.</p>
+        <p>The entire investigation runs on your device. No accounts, no tracking, no external game services. Progress is stored only in this browser when local storage is available.</p>
+        <p className="about-footnote">A hint from the operator: try <code>/help</code> in the answer terminal. Secrets never cost progress.</p>
+        <button id="close-about-bottom" className="submit-button" type="button">BACK TO THE SIGNAL <span aria-hidden="true">↗</span></button>
+      </dialog>
+      <noscript><p className="noscript">Enable JavaScript to investigate the archive. The puzzles run entirely on your device.</p></noscript>
+      <InvestigationController />
+    </>
   );
 }
