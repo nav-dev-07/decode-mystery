@@ -4,7 +4,7 @@ import SplashScreen from "./SplashScreen";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "DECODE — The truth is in the code.",
+  title: "DECODE",
   description:
     "An intercepted transmission. Three layers of encryption. One message waiting to be found. Enter the DECODE archive.",
   icons: {
