@@ -91,6 +91,12 @@ test("music starts on load and the Sound button pauses and resumes it", async t 
   assert.equal(app.$("#sound-label").textContent, "SOUND ON");
   app.click("reset-button");
   assert.equal(app.music.playCalls, 2, "Reset should not restart the track");
+  assert.equal(app.$("#sound-label").textContent, "SOUND ON");
+  app.click("sound-toggle");
+  app.click("reset-button");
+  assert.equal(app.$("#sound-label").textContent, "SOUND OFF", "Reset must respect an explicit mute");
+  assert.equal(app.music.playCalls, 2);
+  assert.equal(app.music.muted, true);
 });
 
 test("reset refreshes questions, hints, notes, labels, and saved state on every click", t => {

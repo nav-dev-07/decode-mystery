@@ -7,12 +7,14 @@ import "./SplashScreen.css";
 export default function SplashScreen({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const splashRef = useRef<HTMLDivElement>(null);
   const pageRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!rootRef.current || !pageRef.current) return;
+    if (!rootRef.current || !splashRef.current || !pageRef.current) return;
     return startSplash({
       root: rootRef.current,
+      splash: splashRef.current,
       page: pageRef.current,
       scrollRoot: document.documentElement,
       body: document.body,
@@ -24,7 +26,7 @@ export default function SplashScreen({ children }: { children: ReactNode }) {
   return (
     <div ref={rootRef} className="site-entry" data-phase={ready ? "ready" : "loading"} style={{ "--splash-duration": `${SPLASH_DURATION}ms` } as CSSProperties}>
       {!ready && (
-        <div className="splash-screen" role="status" aria-label="Opening the DECODE archive">
+        <div ref={splashRef} className="splash-screen" role="status" aria-label="Opening the DECODE archive">
           <div className="splash-screen__header" aria-hidden="true"><span>DECODE / DIGITAL ARCHIVE</span><span>SECURE CHANNEL</span></div>
           <div className="splash-screen__core" aria-hidden="true">
             <svg className="splash-screen__reticle" viewBox="0 0 400 400" fill="none">

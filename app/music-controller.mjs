@@ -1,5 +1,6 @@
 // Browsers may require a user gesture before playing unmuted audio. Try on load,
 // then retry from the first interaction without overriding an explicit mute.
+// `enabled` is the user's preference, not whether a play request has resolved.
 export function createMusicController(audio, { eventTarget, onChange, onError }) {
   let enabled = true;
   let awaitingGesture = false;
@@ -9,6 +10,8 @@ export function createMusicController(audio, { eventTarget, onChange, onError })
 
   audio.loop = true;
   audio.volume = 0.35;
+  audio.autoplay = true;
+  audio.muted = false;
 
   function reportError(error) {
     if (reportedError) return;
@@ -16,11 +19,10 @@ export function createMusicController(audio, { eventTarget, onChange, onError })
     onError?.(error);
   }
 
-  async function play(automatic = false) {
+  async function play() {
+    if (disposed || !enabled) return;
     const request = ++generation;
-    enabled = true;
     awaitingGesture = false;
-    onChange(true);
     try {
       await audio.play();
       if (disposed || request !== generation) {
@@ -30,28 +32,24 @@ export function createMusicController(audio, { eventTarget, onChange, onError })
       reportedError = false;
     } catch (error) {
       if (disposed || request !== generation) return;
-      enabled = false;
-      awaitingGesture = automatic && error?.name === "NotAllowedError";
-      onChange(false);
+      awaitingGesture = error?.name === "NotAllowedError";
       if (!awaitingGesture && error?.name !== "AbortError") reportError(error);
     }
   }
 
   function retryAfterGesture(event) {
-    if (disposed || !awaitingGesture || event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (disposed || !enabled || !awaitingGesture || event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
     // The Sound button handles its own click; a gesture retry must not turn it
     // on just before the button's click handler turns it back off.
     if (event.target?.closest?.("#sound-toggle")) return;
-    void play(true);
+    void play();
   }
 
   function handleError() {
     if (disposed) return;
     generation += 1;
-    enabled = false;
     awaitingGesture = false;
     audio.pause();
-    onChange(false);
     reportError(audio.error);
   }
 
@@ -60,7 +58,8 @@ export function createMusicController(audio, { eventTarget, onChange, onError })
   eventTarget.addEventListener("click", retryAfterGesture);
   eventTarget.addEventListener("keydown", retryAfterGesture);
   audio.addEventListener("error", handleError);
-  void play(true);
+  onChange(true);
+  void play();
 
   return {
     toggle() {
@@ -69,9 +68,15 @@ export function createMusicController(audio, { eventTarget, onChange, onError })
       if (enabled) {
         generation += 1;
         enabled = false;
+        audio.autoplay = false;
+        audio.muted = true;
         audio.pause();
         onChange(false);
       } else {
+        enabled = true;
+        audio.autoplay = true;
+        audio.muted = false;
+        onChange(true);
         void play();
       }
     },
@@ -80,6 +85,8 @@ export function createMusicController(audio, { eventTarget, onChange, onError })
       generation += 1;
       enabled = false;
       awaitingGesture = false;
+      audio.autoplay = false;
+      audio.muted = true;
       eventTarget.removeEventListener("pointerdown", retryAfterGesture);
       eventTarget.removeEventListener("pointerup", retryAfterGesture);
       eventTarget.removeEventListener("click", retryAfterGesture);

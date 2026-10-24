@@ -20,6 +20,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en">
       <body>
+        <canvas id="rain" aria-hidden="true" />
+        <div className="atmosphere" aria-hidden="true" />
+        <div className="scanlines" aria-hidden="true" />
         <audio id="background-music" src="/back-to-life.mp3" autoPlay loop preload="auto" aria-hidden="true" />
         <SplashScreen>{children}</SplashScreen>
         <TargetCursor

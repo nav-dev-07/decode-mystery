@@ -1,6 +1,7 @@
 export const SPLASH_DURATION = 3500;
 
-export function startSplash({ root, page, scrollRoot, body, view, onComplete }) {
+export function startSplash({ root, splash, page, scrollRoot, body, view, onComplete }) {
+  const previousSplashHidden = splash.hidden;
   const previousInert = page.inert;
   const previousOverflow = scrollRoot.style.overflow;
   const previousGutter = scrollRoot.style.scrollbarGutter;
@@ -31,6 +32,7 @@ export function startSplash({ root, page, scrollRoot, body, view, onComplete }) 
   }
 
   page.inert = true;
+  splash.hidden = false;
   scrollRoot.style.scrollbarGutter = "stable";
   scrollRoot.style.overflow = "hidden";
   scrollRoot.style.scrollBehavior = "auto";
@@ -49,11 +51,14 @@ export function startSplash({ root, page, scrollRoot, body, view, onComplete }) 
 
   const timer = setTimeout(() => {
     finished = true;
+    // Hide before dropping the animation selector. React's later unmount must
+    // never leave a frame with the splash reset to its opaque initial style.
+    splash.hidden = true;
     root.dataset.phase = "ready";
     resetScroll();
     release();
     onComplete();
-    // React removes the overlay and reveal transform after onComplete. Correct
+    // React removes the overlay and reveal animation after onComplete. Correct
     // the scroll again on the next frame, once that final layout is in place.
     revealFrame = view.requestAnimationFrame(() => {
       revealFrame = null;
@@ -68,6 +73,7 @@ export function startSplash({ root, page, scrollRoot, body, view, onComplete }) 
     restoreScrollSettings();
     if (!finished) {
       release();
+      splash.hidden = previousSplashHidden;
       root.dataset.phase = "loading";
     }
   };

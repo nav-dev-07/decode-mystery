@@ -625,7 +625,7 @@ export function startInvestigation() {
         if (!enabled && audioContext?.state === "running") void audioContext.suspend().catch(() => {});
       },
       onError() {
-        addLog("Background music unavailable. Use Sound to try again.");
+        addLog("Background music unavailable. Toggle Sound off and on to retry.");
       }
     });
   }

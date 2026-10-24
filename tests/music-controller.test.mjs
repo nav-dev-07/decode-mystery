@@ -46,6 +46,8 @@ test("autoplay starts a looping track at comfortable volume", async t => {
   assert.equal(app.audio.playCalls, 1);
   assert.equal(app.audio.paused, false);
   assert.equal(app.audio.loop, true);
+  assert.equal(app.audio.autoplay, true);
+  assert.equal(app.audio.muted, false);
   assert.equal(app.audio.volume, 0.35);
   assert.deepEqual(app.changes, [true]);
   assert.deepEqual(app.errors, []);
@@ -54,7 +56,7 @@ test("autoplay starts a looping track at comfortable volume", async t => {
 test("blocked autoplay retries on the first interaction without repeated starts", async t => {
   const app = setup(t, [blocked]);
   await Promise.resolve();
-  assert.equal(app.changes.at(-1), false);
+  assert.deepEqual(app.changes, [true], "Blocked autoplay must not disable the user's sound preference");
   assert.deepEqual(app.errors, [], "Autoplay restrictions are not a broken audio file");
   app.gestures.dispatchEvent(new Event("pointerdown"));
   await Promise.resolve();
@@ -66,7 +68,7 @@ test("blocked autoplay retries on the first interaction without repeated starts"
   assert.equal(app.audio.playCalls, 2);
 });
 
-test("clicking Sound after blocked autoplay does not toggle twice", async t => {
+test("the user can turn Sound off while autoplay is waiting, then explicitly enable it again", async t => {
   const app = setup(t, [blocked]);
   await Promise.resolve();
   app.gestures.soundButtonTarget = true;
@@ -75,9 +77,20 @@ test("clicking Sound after blocked autoplay does not toggle twice", async t => {
   app.gestures.dispatchEvent(new Event("click"));
   assert.equal(app.audio.playCalls, 1);
   app.controller.toggle();
+  assert.equal(app.audio.playCalls, 1);
+  assert.equal(app.audio.paused, true);
+  assert.equal(app.audio.autoplay, false);
+  assert.equal(app.audio.muted, true);
+  assert.equal(app.changes.at(-1), false);
+  app.gestures.soundButtonTarget = false;
+  app.gestures.dispatchEvent(new Event("pointerdown"));
+  app.gestures.dispatchEvent(new Event("click"));
+  assert.equal(app.audio.playCalls, 1, "An unrelated interaction cannot override Sound Off");
+  app.controller.toggle();
   await Promise.resolve();
   assert.equal(app.audio.playCalls, 2);
   assert.equal(app.changes.at(-1), true);
+  assert.equal(app.audio.muted, false);
 });
 
 test("muting cancels pending autoplay and a late resolution cannot restart music", async t => {
@@ -110,14 +123,16 @@ test("a stale failed play cannot override a newer successful unmute", async t =>
   assert.deepEqual(app.errors, []);
 });
 
-test("file errors turn Sound off, report once, and allow a manual retry", async t => {
+test("file errors preserve Sound On, report once, and allow a manual off/on retry", async t => {
   const app = setup(t, [() => Promise.reject(new DOMException("Cannot load file", "NotSupportedError"))]);
   await Promise.resolve();
-  assert.equal(app.changes.at(-1), false);
+  assert.equal(app.changes.at(-1), true);
   app.audio.dispatchEvent(new Event("error"));
   assert.equal(app.errors.length, 1);
   app.gestures.dispatchEvent(new Event("click"));
   assert.equal(app.audio.playCalls, 1);
+  app.controller.toggle();
+  assert.equal(app.changes.at(-1), false);
   app.controller.toggle();
   await Promise.resolve();
   assert.equal(app.audio.playCalls, 2);
@@ -135,4 +150,30 @@ test("cleanup pauses music and removes the gesture retry", async t => {
   app.controller.toggle();
   assert.equal(app.audio.playCalls, 1);
   assert.equal(app.audio.paused, true);
+});
+
+test("repeated autoplay restrictions never switch Sound Off automatically", async t => {
+  const app = setup(t, [blocked, blocked]);
+  await Promise.resolve();
+  app.gestures.dispatchEvent(new Event("pointerdown"));
+  await Promise.resolve();
+  assert.equal(app.audio.playCalls, 2);
+  assert.deepEqual(app.changes, [true]);
+  app.gestures.dispatchEvent(new Event("pointerup"));
+  await Promise.resolve();
+  assert.equal(app.audio.playCalls, 3);
+  assert.deepEqual(app.changes, [true]);
+  assert.equal(app.audio.paused, false);
+});
+
+test("normal page interactions leave the enabled looping track playing", async t => {
+  const app = setup(t);
+  await Promise.resolve();
+  for (const type of ["pointerdown", "pointerup", "click", "keydown"]) {
+    app.gestures.dispatchEvent(new Event(type));
+  }
+  assert.equal(app.audio.playCalls, 1);
+  assert.equal(app.audio.pauseCalls, 0);
+  assert.equal(app.audio.loop, true);
+  assert.deepEqual(app.changes, [true]);
 });

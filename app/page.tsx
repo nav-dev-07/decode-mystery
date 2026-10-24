@@ -7,9 +7,6 @@ export default function Home() {
   return (
     <>
       <a className="skip-link" href="#investigation">Skip to investigation</a>
-      <canvas id="rain" aria-hidden="true" />
-      <div className="atmosphere" aria-hidden="true" />
-      <div className="scanlines" aria-hidden="true" />
 
       <header className="topbar">
         <a className="brand" href="#top" aria-label="DECODE archive, back to top" data-cursor-label="Back to top">

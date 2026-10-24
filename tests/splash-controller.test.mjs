@@ -4,8 +4,9 @@ import { parseHTML } from "linkedom";
 import { SPLASH_DURATION, startSplash } from "../app/splash-controller.mjs";
 
 function fixture() {
-  const { document } = parseHTML('<html><body class="existing-class"><div id="root" data-phase="loading"><div id="page"></div></div></body></html>');
+  const { document } = parseHTML('<html><body class="existing-class"><div id="root" data-phase="loading"><div id="splash"></div><div id="page"></div></div></body></html>');
   const root = document.querySelector("#root");
+  const splash = document.querySelector("#splash");
   const page = document.querySelector("#page");
   const scrollRoot = document.documentElement;
   page.inert = false;
@@ -25,7 +26,7 @@ function fixture() {
   };
   let completed = 0;
   return {
-    root, page, scrollRoot, body: document.body, view, scrollCalls,
+    root, splash, page, scrollRoot, body: document.body, view, scrollCalls,
     flushFrames() {
       const callbacks = [...frames.values()];
       frames.clear();
@@ -51,6 +52,7 @@ test("the splash reveals the page after exactly 3.5 seconds and restores interac
   assert.equal(app.page.inert, true);
   t.mock.timers.tick(1);
   assert.equal(app.root.dataset.phase, "ready");
+  assert.equal(app.splash.hidden, true);
   assert.equal(app.completed(), 1);
   assert.equal(app.page.inert, false);
   assert.equal(app.scrollRoot.style.overflow, "auto");
@@ -117,7 +119,7 @@ test("a restored scroll position is reset at entry, reveal, and after the final 
   t.mock.timers.tick(SPLASH_DURATION);
   assert.equal(app.scrollRoot.scrollTop, 0);
   assert.equal(app.view.scrollY, 0);
-  // Also correct scroll anchoring after React removes the overlay/transform.
+  // Also correct scroll anchoring after React removes the overlay/animation.
   app.scrollRoot.scrollTop = 100;
   app.view.scrollY = 100;
   app.flushFrames();
@@ -141,4 +143,28 @@ test("unmount cancels a pending scroll correction and restores history behavior"
   assert.equal(app.scrollCalls.length, callsBefore);
   assert.equal(app.view.history.scrollRestoration, "auto");
   assert.equal(app.scrollRoot.style.scrollBehavior, "smooth");
+});
+
+test("the last splash frame is hidden before React is asked to unmount it", t => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const app = fixture();
+  let notified = false;
+  const dispose = startSplash({
+    ...app,
+    onComplete() {
+      notified = true;
+      assert.equal(app.splash.hidden, true, "No visible splash may remain while the React update is pending");
+      assert.equal(app.root.dataset.phase, "ready");
+      assert.equal(app.page.inert, false);
+    },
+  });
+  t.after(dispose);
+  t.mock.timers.tick(SPLASH_DURATION - 1);
+  assert.equal(app.splash.hidden, false);
+  assert.equal(notified, false);
+  t.mock.timers.tick(1);
+  assert.equal(notified, true);
+  assert.equal(app.splash.isConnected, true, "Simulate a delayed React commit");
+  app.flushFrames();
+  assert.equal(app.splash.hidden, true, "The splash stays hidden until React actually removes it");
 });

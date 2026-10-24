@@ -1,6 +1,7 @@
-.site-entry__page { transform-origin: top center; }
 .site-entry[data-phase="loading"] > .site-entry__page { visibility: hidden; }
 .site-entry[data-phase="playing"] > .site-entry__page { animation: archive-arrival var(--splash-duration) both; animation-play-state: running !important; }
+.site-entry[data-phase="ready"] > .splash-screen { display: none; }
+.site-entry[data-phase="ready"] > .site-entry__page { visibility: visible; opacity: 1; }
 .splash-active .target-cursor { visibility: hidden; }
 
 .splash-screen {
@@ -13,6 +14,7 @@
   background: radial-gradient(ellipse at 50% 48%, #0b2133 0, #06111f 35%, var(--bg) 72%);
   color: var(--cyan);
   isolation: isolate;
+  will-change: opacity;
 }
 
 .splash-screen::before {
@@ -40,7 +42,7 @@
 .splash-screen__header { top: 30px; }
 .splash-screen__footer { bottom: 30px; }
 .splash-screen__header > :last-child, .splash-screen__footer > :last-child { text-align: right; }
-.splash-screen__core { position: relative; display: flex; flex-direction: column; align-items: center; width: min(90vw, 520px); padding: 75px 0; transform-origin: center; }
+.splash-screen__core { position: relative; display: flex; flex-direction: column; align-items: center; width: min(90vw, 520px); padding: 75px 0; transform-origin: center; will-change: transform, opacity; }
 .splash-screen__reticle { position: absolute; top: 50%; left: 50%; width: min(88vw, 430px); height: auto; transform: translate(-50%, -50%); pointer-events: none; }
 .splash-screen__orbit { transform-origin: 200px 200px; }
 .splash-screen__eyebrow { position: relative; font: 8px var(--mono); letter-spacing: 0.22em; color: #9ab9c9; }
@@ -77,9 +79,9 @@
 }
 @keyframes splash-reveal { 0%, 72% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
 @keyframes archive-arrival {
-  0%, 69% { opacity: 0; visibility: hidden; transform: scale(0.96); filter: blur(5px); }
-  70% { opacity: 0; visibility: visible; transform: scale(0.96); filter: blur(5px); }
-  100% { opacity: 1; visibility: visible; transform: none; filter: none; }
+  0%, 69% { opacity: 0; visibility: hidden; }
+  70% { opacity: 0; visibility: visible; }
+  100% { opacity: 1; visibility: visible; }
 }
 
 @media (max-width: 420px) {
