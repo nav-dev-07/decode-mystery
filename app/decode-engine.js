@@ -1,7 +1,10 @@
+import { createInvestigation, restoreInvestigation, normaliseAnswer, matchesAnswer } from "./puzzle-generator.mjs";
+import { createMusicController } from "./music-controller.mjs";
+
 export function startInvestigation() {
 
-  // Puzzle content and the local-only progress format are retained from the starter.
-  const puzzles = [
+  // Retain the original packet only to migrate existing saved investigations.
+  const starterPuzzles = [
     {
       title: "The signal.",
       description: "Intercepted at 03:17. Someone left a door open. Find out what the transmission says.",
@@ -30,17 +33,26 @@ export function startInvestigation() {
       note: "A1Z26 maps the 26 letters of the alphabet to their positions. Read each number separately, from left to right. There is no additional shift in this layer. Sometimes the simplest key opens the last door."
     }
   ];
+  const starterInvestigation = {
+    seed: null, types: ["caesar", "geometric", "a1z26"],
+    puzzles: starterPuzzles.map((puzzle, index) => ({
+      ...puzzle, type: ["caesar", "geometric", "a1z26"][index],
+      label: ["Caesar cipher", "Geometric sequence", "Alphabet positions"][index]
+    }))
+  };
+  let investigation = null;
+  let puzzles = starterInvestigation.puzzles;
   const STORAGE_KEY = "decode-archive-progress-v1";
   const MAX_LOG = 12;
   const $ = (selector) => document.querySelector(selector);
   const state = {
     solved: [false, false, false], hintsUsed: [false, false, false],
-    stage: 0, soundEnabled: false, storageAvailable: true,
+    stage: 0, soundEnabled: true, storageAvailable: true,
     hintOpen: false, noteOpen: false, logEntries: [], discoveries: new Set()
   };
   let ui;
   let audioContext = null;
-  let audioGeneration = 0;
+  let musicController;
   let confirmationTimer;
   let discoveryTimer;
   let background;
@@ -53,7 +65,6 @@ export function startInvestigation() {
     listeners.push(() => target.removeEventListener(event, handler, options));
   }
 
-  const normalise = (value) => String(value ?? "").trim().replace(/\s+/g, " ").toUpperCase();
   const completedCount = () => state.solved.filter(Boolean).length;
   const isComplete = () => state.solved.every(Boolean);
 
@@ -67,8 +78,13 @@ export function startInvestigation() {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
       const saved = JSON.parse(raw);
-      if (!saved || saved.version !== 1 || !Array.isArray(saved.solved)
+      if (!saved || ![1, 2].includes(saved.version) || !Array.isArray(saved.solved)
         || saved.solved.length !== puzzles.length || !saved.solved.every((value) => typeof value === "boolean")) return;
+      const restored = saved.version === 1 || saved.investigation === "starter"
+        ? starterInvestigation : restoreInvestigation(saved.investigation);
+      if (!restored) return;
+      investigation = restored;
+      puzzles = investigation.puzzles;
       // Accept only a contiguous solved prefix. A later layer never skips a locked one.
       let locked = false;
       state.solved = saved.solved.map((value) => {
@@ -89,7 +105,11 @@ export function startInvestigation() {
   function saveProgress() {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        version: 1, solved: state.solved, hintsUsed: state.hintsUsed
+        version: 2,
+        investigation: investigation.seed === null ? "starter" : {
+          seed: investigation.seed, types: investigation.types
+        },
+        solved: state.solved, hintsUsed: state.hintsUsed
       }));
       state.storageAvailable = true;
     } catch {
@@ -143,10 +163,11 @@ export function startInvestigation() {
       ? "The archive is no longer silent. All three fragments are yours. Read the recovered transmission below."
       : puzzle.description;
     ui.layerLabel.textContent = complete ? "ALL LAYERS DECRYPTED" : `ENCRYPTION LAYER 0${state.stage + 1}`;
-    ui.dataId.textContent = puzzle.id;
     ui.dataTime.textContent = puzzle.time;
     ui.cipher.textContent = complete ? "TRANSMISSION RESTORED" : puzzle.cipher;
     ui.clue.textContent = puzzle.clue;
+    ui.input.placeholder = /^\d+$/.test(puzzle.answer) ? "Enter the next number…" : "Enter the decoded message…";
+    ui.finalMessage.textContent = `“${puzzles[0].answer}. ${puzzles[2].answer}.”`;
     ui.progressText.textContent = `${completedCount()} / ${puzzles.length}`;
     ui.progressTrack.setAttribute("value", String(completedCount()));
     ui.progressTrack.textContent = `${completedCount()} of 3 layers decrypted`;
@@ -170,6 +191,7 @@ export function startInvestigation() {
       if (active) item.setAttribute("aria-current", "step");
       else item.removeAttribute("aria-current");
       item.querySelector(".mission-state").textContent = state.solved[index] ? "CLEARED ✓" : active ? "ACTIVE" : "LOCKED";
+      item.querySelector(".mission-name small").textContent = puzzles[index].label;
     });
     renderReveals();
     setFeedback(complete ? "All fragments decoded. The hidden transmission is yours." : "Awaiting your response_", complete ? "success" : "");
@@ -202,26 +224,8 @@ export function startInvestigation() {
 
   function renderSound() {
     ui.soundButton.setAttribute("aria-pressed", String(state.soundEnabled));
-    ui.soundButton.setAttribute("aria-label", state.soundEnabled ? "Disable interface sound" : "Enable interface sound");
+    ui.soundButton.setAttribute("aria-label", state.soundEnabled ? "Pause music and interface sound" : "Play music and enable interface sound");
     ui.soundLabel.textContent = state.soundEnabled ? "SOUND ON" : "SOUND OFF";
-  }
-
-  async function toggleSound() {
-    const generation = ++audioGeneration;
-    state.soundEnabled = !state.soundEnabled;
-    renderSound();
-    if (state.soundEnabled) {
-      const available = await playTone(520, .12, "triangle");
-      if (disposed) return;
-      if (!available && generation === audioGeneration) {
-        state.soundEnabled = false;
-        renderSound();
-        addLog("Audio unavailable. Silent investigation continues.");
-        setFeedback("Sound is unavailable in this browser. The investigation is fully playable.");
-      }
-    } else if (audioContext?.state === "running") {
-      try { await audioContext.suspend(); } catch { /* Optional audio. */ }
-    }
   }
 
   function showHint() {
@@ -256,7 +260,7 @@ export function startInvestigation() {
       document.body.classList.add("modal-open");
       background?.refresh();
     } catch {
-      setFeedback("Dialog unavailable. The recovered message: The door is open. Stay curious.");
+      setFeedback(`Dialog unavailable. The recovered message: ${ui.finalMessage.textContent}`);
     }
   }
 
@@ -344,14 +348,14 @@ export function startInvestigation() {
     if (isComplete() || document.querySelector("dialog[open]")) return;
     // Derive the active layer from the solved prefix, never from markup or location.
     state.stage = Math.min(completedCount(), puzzles.length - 1);
-    const answer = normalise(ui.input.value);
+    const answer = normaliseAnswer(ui.input.value);
     if (!answer) {
-      setFeedback("Enter a decoded message before continuing.", "error");
+      setFeedback("Enter an answer before continuing.", "error");
       ui.input.focus();
       return;
     }
     if (answer.startsWith("/")) { runCommand(answer); return; }
-    if (answer === puzzles[state.stage].answer) {
+    if (matchesAnswer(puzzles[state.stage], answer)) {
       solveCurrentPuzzle();
     } else {
       setFeedback("Not quite — the fragment is still encrypted. Recheck the lead or request a hint.", "error");
@@ -366,6 +370,8 @@ export function startInvestigation() {
     clearTimeout(confirmationTimer);
     clearTimeout(discoveryTimer);
     document.body.classList.remove("confirmed", "discovery-flash");
+    investigation = createInvestigation(investigation);
+    puzzles = investigation.puzzles;
     state.solved = [false, false, false];
     state.hintsUsed = [false, false, false];
     state.stage = 0;
@@ -374,15 +380,13 @@ export function startInvestigation() {
     state.discoveries.clear();
     state.logEntries = [];
     ui.log.replaceChildren();
-    try { window.localStorage.removeItem(STORAGE_KEY); state.storageAvailable = true; }
-    catch { state.storageAvailable = false; }
-    storageStatus();
+    saveProgress();
     closeDialog(ui.completionDialog);
     closeDialog(ui.aboutDialog);
     renderPuzzle();
-    addLog("Investigation reset. All layers encrypted.");
-    addLog("Fresh packet recovered. Awaiting investigator input.");
-    setFeedback("Investigation reset. Follow the first signal.");
+    addLog("Investigation reset. Three different puzzle types selected.");
+    addLog(`Fresh packet recovered. First layer: ${puzzles[0].label}.`);
+    setFeedback("New investigation generated. Follow the fresh signal.");
     ui.input.focus();
   }
 
@@ -569,7 +573,7 @@ export function startInvestigation() {
       input: $("#answer-input"), feedback: $("#feedback"), form: $("#answer-form"),
       title: $("#mission-title"), description: $("#mission-description"), cipher: $("#cipher-text"),
       cipherWindow: $("#cipher-window"), clue: $("#clue-text"), layerLabel: $("#layer-label"),
-      dataId: $("#data-id"), dataTime: $("#data-time"), progressText: $("#progress-text"),
+      dataTime: $("#data-time"), progressText: $("#progress-text"),
       progressCaption: $("#progress-caption"), progressTrack: $("#progress-track"),
       systemStatus: $("#system-status"), storageStatus: $("#storage-status"), decodeButton: $("#decode-button"),
       investigationStatus: $("#investigation-status"), remainingLayers: $("#remaining-layers"),
@@ -577,9 +581,13 @@ export function startInvestigation() {
       noteButton: $("#note-button"), notePanel: $("#note-panel"), noteText: $("#note-text"), noteChevron: $("#note-chevron"),
       log: $("#log-content"), logCount: $("#log-count"), soundButton: $("#sound-toggle"), soundLabel: $("#sound-label"),
       motionButton: $("#motion-toggle"), motionLabel: $("#motion-label"),
-      completionDialog: $("#completion-dialog"), aboutDialog: $("#about-dialog"), viewTransmission: $("#view-transmission")
+      completionDialog: $("#completion-dialog"), aboutDialog: $("#about-dialog"), viewTransmission: $("#view-transmission"),
+      finalMessage: $("#final-message")
     };
     safeLoadProgress();
+    investigation ??= createInvestigation();
+    puzzles = investigation.puzzles;
+    saveProgress();
     renderPuzzle();
     storageStatus();
     renderSound();
@@ -596,8 +604,7 @@ export function startInvestigation() {
     on($("#about-button"), "click", () => openDialog(ui.aboutDialog));
     on($("#close-about"), "click", () => closeDialog(ui.aboutDialog));
     on($("#close-about-bottom"), "click", () => closeDialog(ui.aboutDialog));
-    on(ui.soundButton, "click", () => { void toggleSound(); });
-    on($("#secret-button"), "click", () => discover("symbol", "∴ ARCHIVE MARGINALIA: Therefore, someone was here. Try /echo in the terminal."));
+    on(ui.soundButton, "click", () => musicController.toggle());
     on(document, "keydown", (event) => {
       const target = event.target;
       if (event.key !== "?" || event.ctrlKey || event.metaKey || event.altKey || event.repeat
@@ -610,14 +617,25 @@ export function startInvestigation() {
     addLog(completedCount() ? `${completedCount()} of 3 layers restored from this device.` : "Three encryption layers detected. Origin unknown.");
     addLog(isComplete() ? "Transmission available. Welcome back, investigator." : `Layer 0${state.stage + 1} ready. Awaiting investigator input.`);
     background = createBackground();
+    musicController = createMusicController($("#background-music"), {
+      eventTarget: document,
+      onChange(enabled) {
+        state.soundEnabled = enabled;
+        renderSound();
+        if (!enabled && audioContext?.state === "running") void audioContext.suspend().catch(() => {});
+      },
+      onError() {
+        addLog("Background music unavailable. Use Sound to try again.");
+      }
+    });
   }
 
   init();
 
   return () => {
     disposed = true;
-    audioGeneration += 1;
     state.soundEnabled = false;
+    musicController?.destroy();
     listeners.forEach((remove) => remove());
     background?.destroy();
     clearTimeout(confirmationTimer);

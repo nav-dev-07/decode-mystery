@@ -1,5 +1,7 @@
 import InvestigationController from "./investigation-controller";
-import DecryptedText from "./DecryptedText";
+import TextType from "./TextType";
+import SignalField from "./SignalField";
+import { SPLASH_DURATION } from "./splash-controller.mjs";
 
 export default function Home() {
   return (
@@ -22,9 +24,9 @@ export default function Home() {
           <button className="utility-button" id="motion-toggle" type="button" aria-pressed="false" aria-label="Pause background animation">
             <span aria-hidden="true">Ⅱ</span><span id="motion-label">PAUSE FX</span>
           </button>
-          <button className="utility-button" id="sound-toggle" type="button" aria-pressed="false" aria-label="Enable interface sound">
+          <button className="utility-button" id="sound-toggle" type="button" aria-pressed="true" aria-label="Pause music and interface sound" title="Back To Life — Aylex">
             <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 8h3l4-4v12l-4-4H3zM14 7q4 3 0 6" /></svg>
-            <span id="sound-label">SOUND OFF</span>
+            <span id="sound-label">SOUND ON</span>
           </button>
         </div>
       </header>
@@ -32,48 +34,39 @@ export default function Home() {
       <main className="shell" id="top">
         <section className="intro" aria-labelledby="headline">
           <div className="intro-content">
-            <p className="eyebrow"><span className="crosshair" aria-hidden="true">+</span> AN INTERACTIVE DIGITAL MYSTERY <span className="edition">VOL. 001</span></p>
+            <p className="eyebrow"><span className="crosshair" aria-hidden="true">+</span> AN INTERACTIVE DIGITAL MYSTERY</p>
             <h1 id="headline">
-              <DecryptedText
-                text={"THE TRUTH IS\nIN THE CODE."}
-                animateOn="inViewHover"
-                effect="scramble"
-                sequential
-                revealDirection="start"
-                speed={60}
-                maxIterations={10}
-                hoverRadius={100}
-                scrambleColor="var(--electric)"
+              <TextType
+                text={["THE TRUTH IS\nIN THE CODE."]}
+                className="headline-typing"
+                data-text={"THE TRUTH IS\nIN THE CODE."}
+                typingSpeed={75}
+                initialDelay={SPLASH_DURATION}
                 loop={false}
-                loopDelay={2000}
-                useOriginalCharsOnly={false}
-                characters="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!@#$%^&*()_+"
-                className="revealed"
-                encryptedClassName="encrypted"
-                parentClassName="headline-decryption"
-                clickMode="once"
-              >
-                <span className="heading-cursor" aria-hidden="true">_</span>
-              </DecryptedText>
+                pauseDuration={1500}
+                deletingSpeed={50}
+                deleteMode="backspace"
+                typeEffect="none"
+                mistakes={0}
+                cursorStyle="underscore"
+                cursorGlide
+                showCursor
+                cursorColor="currentColor"
+                prefixColor="currentColor"
+                cursorBlinkDuration={0.5}
+                cursorCharacter="_"
+                prefix=""
+                highlightLastWord
+              />
             </h1>
-            <p className="intro-copy">Some things were never meant to be found.<br />A lost transmission. Three encrypted fragments.<br />Follow the signal. Uncover what remains.</p>
+            <button className="about-button" id="about-button" type="button">ABOUT THE ARCHIVE <span aria-hidden="true">↗</span></button>
             <div className="intro-meta">
               <span><span className="status-dot" /><span id="investigation-status">INVESTIGATION OPEN</span></span>
               <span id="remaining-layers">3 LAYERS TO DECRYPT</span><span>EST. 5 MIN</span>
             </div>
           </div>
-          <div className="signal-art" aria-hidden="true">
-            <div className="signal-top"><span>INCOMING TRANSMISSION</span><span className="signal-live">● LIVE</span></div>
-            <div className="signal-target">
-              <span className="target-axis horizontal" /><span className="target-axis vertical" />
-              <span className="target-bracket top-left" /><span className="target-bracket top-right" />
-              <span className="target-bracket bottom-left" /><span className="target-bracket bottom-right" />
-              <span className="signal-coordinate">51° 30′ 26.4″ N</span><span className="signal-center">⌁</span>
-              <span className="signal-frequency">137.50 <small>MHz</small></span>
-            </div>
-            <div className="signal-bottom"><span>ORIGIN: UNKNOWN</span><span>STRENGTH <i /><i /><i /><i /><i /></span></div>
-          </div>
-          <div className="hero-baseline"><span>ARCHIVE ACCESS <b>GRANTED</b></span><span>SCROLL TO INVESTIGATE <span aria-hidden="true">↓</span></span></div>
+          <SignalField />
+          <div className="hero-baseline"><span>ARCHIVE ACCESS <b>GRANTED</b></span><span>DECODE &amp; INVESTIGATE</span></div>
         </section>
 
         <section id="investigation" className="investigation" aria-labelledby="investigation-heading" tabIndex={-1}>
@@ -84,37 +77,36 @@ export default function Home() {
           </div>
           <div className="game-layout">
             <aside className="mission-panel" aria-labelledby="mission-heading">
-              <div className="section-heading"><h3 id="mission-heading">THE INVESTIGATION</h3><span>01—03</span></div>
+              <div className="section-heading"><h3 id="mission-heading">THE INVESTIGATION</h3></div>
               <p className="mission-kicker">FOLLOW THE FRAGMENTS</p>
               <p className="mission-description">Every answer opens a door.<br />Start with the signal.</p>
               <ol className="mission-list" id="mission-list">
-                <li className="mission-item active" data-stage="0" aria-current="step"><span className="mission-index">01</span><span className="mission-name"><strong>THE SIGNAL</strong><small>Caesar cipher</small></span><span className="mission-state">ACTIVE</span></li>
+                <li className="mission-item active" data-stage="0" aria-current="step"><span className="mission-index">01</span><span className="mission-name"><strong>THE SIGNAL</strong><small>Receiving packet…</small></span><span className="mission-state">ACTIVE</span></li>
                 <li className="mission-item" data-stage="1"><span className="mission-index">02</span><span className="mission-name"><strong>THE PATTERN</strong><small>Number sequence</small></span><span className="mission-state">LOCKED</span></li>
-                <li className="mission-item" data-stage="2"><span className="mission-index">03</span><span className="mission-name"><strong>THE MESSAGE</strong><small>Final transmission</small></span><span className="mission-state">LOCKED</span></li>
+                <li className="mission-item" data-stage="2"><span className="mission-index">03</span><span className="mission-name"><strong>THE MESSAGE</strong><small>Encoded message</small></span><span className="mission-state">LOCKED</span></li>
               </ol>
               <div className="progress-block">
                 <div className="progress-label"><span>DECRYPTION PROGRESS</span><strong id="progress-text">0 / 3</strong></div>
                 <progress className="progress-track" id="progress-track" max="3" value="0" aria-label="Completed encryption layers">0 of 3 layers decrypted</progress>
                 <p id="progress-caption">Three layers. One hidden truth.</p>
               </div>
-              <button className="text-button" id="reset-button" type="button" data-cursor-label="Reset"><span aria-hidden="true">↺</span> RESET INVESTIGATION</button>
               <div className="mission-stamp" aria-hidden="true">DECODE BUREAU<br /><span>INFORMATION WANTS TO BE FOUND.</span><div className="barcode" />001A · 7FA2 · 0317</div>
             </aside>
 
             <section className="puzzle-panel" aria-labelledby="mission-title">
               <div className="section-heading"><h3>INTERCEPTED DATA</h3><span className="live-label"><span className="status-dot" /> LIVE FEED</span></div>
               <div className="puzzle-body">
-                <div className="puzzle-topline"><p className="eyebrow" id="layer-label">ENCRYPTION LAYER 01</p><span id="data-id">7F–A2</span></div>
+                <div className="puzzle-topline"><p className="eyebrow" id="layer-label">ENCRYPTION LAYER 01</p><button className="text-button" id="reset-button" type="button" data-cursor-label="Reset"><span aria-hidden="true">↺</span> RESET INVESTIGATION</button></div>
                 <h2 id="mission-title">The signal.</h2>
-                <p className="puzzle-description" id="mission-description">Intercepted at 03:17. Someone left a door open.<br />Find out what the transmission says.</p>
+                <p className="puzzle-description" id="mission-description">Receiving a fresh investigation packet.<br />Your first signal is on its way.</p>
                 <div className="cipher-window" id="cipher-window">
                   <div className="cipher-label"><span>ENCRYPTED FRAGMENT</span><span aria-hidden="true">[ RAW ]</span></div>
-                  <p className="cipher-text" id="cipher-text">WKH GRRU LV RSHQ</p>
+                  <p className="cipher-text" id="cipher-text">RECEIVING SIGNAL…</p>
                   <div className="cipher-footer"><span id="data-time">03:17:09 UTC</span><span>SOURCE UNKNOWN <span aria-hidden="true">↗</span></span></div>
                 </div>
-                <div className="clue-box"><span className="clue-icon" aria-hidden="true">↳</span><div><h3>THE LEAD</h3><p id="clue-text">Every letter has shifted three places forward. Reverse the shift.</p></div></div>
+                <div className="clue-box"><span className="clue-icon" aria-hidden="true">↳</span><div><h3>The Lead.</h3><p id="clue-text">Preparing the lead for your investigation.</p></div></div>
                 <form id="answer-form" autoComplete="off" noValidate>
-                  <label htmlFor="answer-input">YOUR DECODED MESSAGE <span>CASE INSENSITIVE</span></label>
+                  <label htmlFor="answer-input">YOUR ANSWER <span>CASE INSENSITIVE</span></label>
                   <div className="answer-row">
                     <span className="input-prompt" aria-hidden="true">&gt;_</span>
                     <input id="answer-input" name="answer" type="text" placeholder="Enter your answer…" maxLength={100} spellCheck={false} autoCapitalize="off" aria-describedby="feedback" data-cursor-label="Enter message" />
@@ -138,19 +130,18 @@ export default function Home() {
               <div className="log-topline"><span>SESSION // 001–A</span><span id="log-count">00 EVENTS</span></div>
               <div id="log-content" className="log-content" role="log" aria-label="Recent system events" aria-live="polite" aria-relevant="additions" tabIndex={0} />
               <div className="log-bottom"><span className="terminal-caret" aria-hidden="true">&gt;_</span><span>LISTENING FOR A SIGNAL<span className="cursor" aria-hidden="true">...</span></span></div>
-              <div className="archive-note"><span aria-hidden="true">[ ! ]</span><p>“The noise is not the message.<br />Look for what repeats.”</p><small>— UNKNOWN OPERATOR</small></div>
+              <div className="archive-note"><span aria-hidden="true">{"{ N }"}</span><p>“A cipher is a lock; your mind is the key.”</p><small>~Navnisha</small></div>
             </aside>
           </div>
         </section>
 
         <section className="bottom-strip" aria-label="Investigator tips">
-          <p><span className="tip-mark" aria-hidden="true">✳</span><span><strong>STAY CURIOUS.</strong> The archive has more secrets than it admits.</span></p>
+          <p><span className="tip-mark" aria-hidden="true">✳</span><strong>STAY CURIOUS.</strong></p>
           <div className="keyboard-note"><kbd>ENTER</kbd> DECODE <span>/</span> <kbd>?</kbd> HINT <span>/</span> <kbd>ESC</kbd> CLOSE DIALOG</div>
         </section>
         <footer>
-          <span className="footer-brand">DECODE<span className="muted"> / </span>2026</span>
+          <span className="footer-brand"><span className="footer-wordmark">DECODE</span><span><span className="muted"> / </span>2026</span></span>
           <span className="footer-disclaimer">A FICTIONAL MYSTERY. A VERY REAL CURIOSITY.</span>
-          <div><button className="secret-button" id="secret-button" type="button" aria-label="Inspect the unknown archive symbol" title="An unfamiliar symbol">[ ∴ ]</button><button id="about-button" type="button">ABOUT THE ARCHIVE <span aria-hidden="true">↗</span></button></div>
         </footer>
       </main>
 
@@ -171,10 +162,10 @@ export default function Home() {
       </dialog>
       <dialog id="about-dialog" className="archive-dialog about-dialog" aria-labelledby="about-title">
         <button className="dialog-close" id="close-about" type="button" aria-label="Close about the archive">×</button>
-        <p className="eyebrow">BEHIND THE INTERFACE</p>
+        <p className="eyebrow about-eyebrow"><span>BEHIND THE INTERFACE</span><span>MADE BY NAVNISHA</span></p>
         <h2 id="about-title">A FICTIONAL<br /><span>DIGITAL MYSTERY.</span></h2>
         <p>DECODE is a small experiment in curiosity. Three fragments, three ways of seeing, and a message hidden in plain sight.</p>
-        <p>The entire investigation runs on your device. No accounts, no tracking, no external game services. Progress is stored only in this browser when local storage is available.</p>
+        <p>Each reset generates a fresh packet with three different puzzle types. The entire investigation runs on your device. Progress and your current questions are saved in this browser when local storage is available.</p>
         <p className="about-footnote">A hint from the operator: try <code>/help</code> in the answer terminal. Secrets never cost progress.</p>
         <button id="close-about-bottom" className="submit-button" type="button">BACK TO THE SIGNAL <span aria-hidden="true">↗</span></button>
       </dialog>

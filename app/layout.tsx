@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import TargetCursor from "./TargetCursor";
+import SplashScreen from "./SplashScreen";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -19,7 +20,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en">
       <body>
-        {children}
+        <audio id="background-music" src="/back-to-life.mp3" autoPlay loop preload="auto" aria-hidden="true" />
+        <SplashScreen>{children}</SplashScreen>
         <TargetCursor
           targetSelector='.cursor-target, a[href], button:enabled, input:not(:disabled), [role="button"]:not([aria-disabled="true"])'
           spinDuration={2}
